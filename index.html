@@ -904,3 +904,86 @@
     </script>
 </body>
 </html>
+<script>
+    // Cek status login
+    function checkLoginStatus() {
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        const formSection = document.querySelector('.medication-form');
+        if (!user) {
+            formSection.innerHTML = `
+                <div style="text-align: center; padding: 30px;">
+                    <p>Silakan <strong>daftar</strong> atau <strong>login</strong> untuk mulai mencatat penggunaan obat.</p>
+                    <button id="triggerLogin" class="submit-btn" style="margin-top: 20px;">Masuk</button>
+                </div>`;
+            document.getElementById('triggerLogin').addEventListener('click', () => {
+                loginModal.style.display = 'block';
+            });
+            return false;
+        }
+        return true;
+    }
+
+    // Simpan data pendaftaran
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const name = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        const exists = users.find(user => user.email === email);
+        if (exists) {
+            alert('Email sudah terdaftar!');
+            return;
+        }
+
+        users.push({ name, email, password });
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Pendaftaran berhasil. Silakan login.');
+        registerModal.style.display = 'none';
+    });
+
+    // Proses login
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        const user = users.find(user => user.email === email && user.password === password);
+
+        if (user) {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            alert('Login berhasil!');
+            location.reload();
+        } else {
+            alert('Email atau password salah.');
+        }
+    });
+
+    // Tambah tombol logout di pojok kanan
+    const authContainer = document.querySelector('.auth-buttons');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (currentUser) {
+        authContainer.innerHTML = `
+            <span style="color: white; margin-right: 10px;">Halo, ${currentUser.name}</span>
+            <button id="logoutBtn">Logout</button>
+        `;
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            location.reload();
+        });
+    }
+
+    // Tambahkan validasi login sebelum mencatat obat
+    medicineForm.addEventListener('submit', (e) => {
+        if (!checkLoginStatus()) {
+            e.preventDefault();
+            alert('Silakan login terlebih dahulu untuk mencatat obat.');
+            return;
+        }
+    });
+
+    // Jalankan saat halaman dimuat
+    checkLoginStatus();
+</script>
