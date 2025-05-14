@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- [Bagian head sama seperti sebelumnya] -->
+    <style>
+        /* [CSS sama seperti sebelumnya] */
+        
+        .disabled-form {
+            position: relative;
+        }
+        
+        .disabled-form::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        
+        .disabled-form::before {
+            content: "Silakan login untuk mencatat obat";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 11;
+            background: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+        
+        .user-info i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .logout-btn {
+            background: none;
+            border: none;
+            color: white;
+            margin-left: 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <i class="fas fa-pills"></i>
+                <h1>MedTrack</h1>
+            </div>
+            <div class="auth-buttons" id="authButtons">
+                <button id="registerBtn">Daftar</button>
+                <button id="loginBtn">Masuk</button>
+            </div>
+            <div class="user-info" id="userInfo" style="display: none;">
+                <i class="fas fa-user-circle"></i>
+                <span id="usernameDisplay"></span>
+                <button class="logout-btn" id="logoutBtn">Keluar</button>
+            </div>
+        </div>
+        
+        <!-- [Floating pill animations sama seperti sebelumnya] -->
+    </header>
+    
+    <!-- [Register dan Login Modal sama seperti sebelumnya] -->
+    
+    <div class="container main-content">
+        <!-- [Information Section sama seperti sebelumnya] -->
+        
+        <!-- Medication Form -->
+        <section class="medication-form" id="medicationFormSection">
+            <h2><i class="fas fa-edit"></i> Catatan Obat</h2>
+            <form id="medicineForm">
+                <!-- [Form fields sama seperti sebelumnya] -->
+                <button type="submit" class="submit-btn" id="submitMedicineBtn">Simpan Catatan Obat</button>
+            </form>
+            
+            <!-- [Notification permission sama seperti sebelumnya] -->
+        </section>
+        
+        <!-- [History Section sama seperti sebelumnya] -->
+    </div>
+    
+    <script>
+        // [Modal functionality sama seperti sebelumnya]
+        
+        // User authentication state
+        let currentUser = null;
+        
+        // Check if user is logged in from localStorage
+        function checkAuth() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (user) {
+                loginUser(user);
+            } else {
+                // Disable medicine form if not logged in
+                document.getElementById('medicationFormSection').classList.add('disabled-form');
+                document.getElementById('submitMedicineBtn').disabled = true;
+            }
+        }
+        
+        // Login user function
+        function loginUser(user) {
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            
+            // Update UI
+            document.getElementById('authButtons').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('usernameDisplay').textContent = user.name;
+            
+            // Enable medicine form
+            document.getElementById('medicationFormSection').classList.remove('disabled-form');
+            document.getElementById('submitMedicineBtn').disabled = false;
+            
+            // Close login modal if open
+            document.getElementById('loginModal').style.display = 'none';
+        }
+        
+        // Logout function
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            
+            // Update UI
+            document.getElementById('authButtons').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            
+            // Disable medicine form
+            document.getElementById('medicationFormSection').classList.add('disabled-form');
+            document.getElementById('submitMedicineBtn').disabled = true;
+        });
+        
+        // Register form submission
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const user = {
+                name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value
+            };
+            
+            // Save user to localStorage (in real app, this would go to server)
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            users.push(user);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            // Login the user after registration
+            loginUser(user);
+            
+            // Reset form
+            document.getElementById('registerForm').reset();
+        });
+        
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            // Check credentials (in real app, this would check with server)
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                loginUser(user);
+            } else {
+                alert('Email atau password salah!');
+            }
+            
+            // Reset form
+            document.getElementById('loginForm').reset();
+        });
+        
+        // [Time option selection sama seperti sebelumnya]
+        // [Meal option selection sama seperti sebelumnya]
+        
+        // Medicine form submission - MODIFIED to check auth
+        const medicineForm = document.getElementById('medicineForm');
+        const medicineHistory = document.getElementById('medicineHistory');
+        
+        medicineForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                alert('Silakan login terlebih dahulu!');
+                document.getElementById('loginModal').style.display = 'block';
+                return;
+            }
+            
+            const medicine = {
+                name: document.getElementById('medicineName').value,
+                dose: document.getElementById('medicineDose').value,
+                time: document.getElementById('medicineTime').value,
+                meal: document.getElementById('medicineMeal').value,
+                timeInput: document.getElementById('medicineTimeInput').value,
+                frequency: document.querySelector('input[name="frequency"]:checked').value,
+                date: new Date().toLocaleString(),
+                userId: currentUser.email // Associate medicine with user
+            };
+            
+            let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
+            medicines.unshift(medicine);
+            localStorage.setItem('medicines', JSON.stringify(medicines));
+            
+            // [Notification prompt sama seperti sebelumnya]
+            
+            // Reset form
+            medicineForm.reset();
+            document.getElementById('medicineTime').value = 'pagi';
+            document.getElementById('medicineMeal').value = 'sebelum';
+            document.querySelector('input[name="frequency"][value="3x1"]').checked = true;
+            
+            // Update history
+            renderHistory();
+            
+            // Schedule notifications
+            scheduleNotifications(medicine);
+        });
+        
+        // [Notification permission sama seperti sebelumnya]
+        
+        // Render history - MODIFIED to show only current user's medicines
+        function renderHistory() {
+            medicineHistory.innerHTML = '';
+            
+            let medicines = JSON.parse(localStorage.getItem('medicines')) || [];
+            
+            // Filter medicines by current user
+            if (currentUser) {
+                medicines = medicines.filter(m => m.userId === currentUser.email);
+            } else {
+                medicines = [];
+            }
+            
+            if (medicines.length === 0) {
+                medicineHistory.innerHTML = '<p>Belum ada catatan obat.</p>';
+                return;
+            }
+            
+            medicines.forEach((medicine, index) => {
+                // [History item creation sama seperti sebelumnya]
+            });
+            
+            // [Delete button event listeners sama seperti sebelumnya]
+        }
+        
+        // [calculateNextTime sama seperti sebelumnya]
+        // [scheduleNotifications sama seperti sebelumnya]
+        // [createPillAnimations sama seperti sebelumnya]
+        
+        // Initial check auth and render
+        checkAuth();
+        renderHistory();
+        createPillAnimations();
+    </script>
+</body>
+</html>
